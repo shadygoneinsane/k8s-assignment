@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            # Postgres reads these specific env vars on first boot to
+            # create the database, user, and password automatically.
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+            # Tell Postgres where to store data ON the mounted disk.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            # Mount the persistent disk where Postgres keeps its data
+            - name: db-storage
+              mountPath: /var/lib/postgresql/data
+            # Mount the init SQL so it runs on first boot
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        # The persistent disk, backed by our PVC
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: db-pvc
+        # The init SQL, pulled from the ConfigMap's init.sql key
+        - name: init-script
+          configMap:
+            name: db-config
+            items:
+              - key: init.sql
+                path: init.sql

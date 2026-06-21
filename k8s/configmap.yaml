@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  # --- Job 1: connection settings (read as env vars by both tiers) ---
+  DB_HOST: db-service       # the DB Service DNS name (NOT a pod IP)
+  DB_PORT: "5432"
+  DB_NAME: productdb
+  DB_USER: mobuser
+
+  # --- Job 2: the init SQL that seeds the products table ---
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        price NUMERIC(10,2) NOT NULL,
+        stock INTEGER NOT NULL
+    );
+
+    INSERT INTO products (name, category, price, stock) VALUES
+        ('Mouse', 'Electronics', 24.90, 130),
+        ('Keyboard', 'Electronics', 69.99, 80),
+        ('USB-C Hub', 'Accessories', 34.50, 160),
+        ('Laptop Stand', 'Accessories', 25.00, 100),
+        ('Headphones', 'Audio', 199.99, 80),
+        ('Webcam 1080p', 'Electronics', 59.99, 96),
+        ('Desk Lamp LED', 'Home Office', 29.99, 40);
