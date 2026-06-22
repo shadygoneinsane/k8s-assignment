@@ -4,6 +4,9 @@ metadata:
   name: db-deployment
 spec:
   replicas: 1
+  strategy:
+      # DB owns a single Read Write Once disk, so replace i.e kill old pod first and then start the new one
+      type: Recreate
   selector:
     matchLabels:
       app: postgres
